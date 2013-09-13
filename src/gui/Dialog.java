@@ -1,6 +1,7 @@
 package gui;
 import java.awt.BorderLayout;
 import java.awt.Font;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
@@ -61,8 +62,13 @@ public class Dialog extends JFrame implements ItemListener,ActionListener, Mouse
 	{
 		super("StempelUhr");
 		
-		
-
+		try {
+			Toolkit xToolkit = Toolkit.getDefaultToolkit();
+			java.lang.reflect.Field awtAppClassNameField =
+			    xToolkit.getClass().getDeclaredField("awtAppClassName");
+			awtAppClassNameField.setAccessible(true);
+			awtAppClassNameField.set(xToolkit, "StempelUhr");
+		} catch (Exception e) {}
         
 		this.setDefaultCloseOperation(EXIT_ON_CLOSE);
 		this.setLayout(new BorderLayout());
