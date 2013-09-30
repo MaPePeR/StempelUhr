@@ -23,12 +23,14 @@ public class ZeitRechner extends JPanel implements ZeitListener
 	JLabel jProduktivZeit = new JLabel();
 	JLabel jPausenZeit = new JLabel();
 	JLabel jKontoVeraenderung = new JLabel();
+	JLabel jRestZeit = new JLabel();
 	
-	Zeit gesamtZeit;
-	Zeit produktivZeit;
+	AZeit gesamtZeit;
+	AZeit produktivZeit;
 	char kontoVeraenderungPrefix;
-	Zeit kontoveraenderung;
-	Zeit pausenZeit;
+	AZeit kontoveraenderung;
+	AZeit pausenZeit;
+	AZeit restZeit; 
 	
 	public ZeitRechner(AZeit startZeit,AZeit uhr)
 	{
@@ -52,6 +54,9 @@ public class ZeitRechner extends JPanel implements ZeitListener
 		
 		this.add(new JLabel("Konto Veraenderung:"));
 		this.add(jKontoVeraenderung);
+		
+		this.add(new JLabel("Zeit bis Plus:"));
+		this.add(jRestZeit);
 	}
 	@Override
 	public void timeHasChanged()
@@ -67,6 +72,7 @@ public class ZeitRechner extends JPanel implements ZeitListener
 		jProduktivZeit.setText(produktivZeit.getNormalAnd100());
 		jPausenZeit.setText(pausenZeit.getNormalAnd100());
 		jKontoVeraenderung.setText(kontoveraenderung.getNormalAnd100(""+kontoVeraenderungPrefix));
+		jRestZeit.setText(restZeit.getNormalAnd100());
 	}
 	private void recalculate(Zeit zeit)
 	{
@@ -112,6 +118,11 @@ public class ZeitRechner extends JPanel implements ZeitListener
 			kontoVeraenderungPrefix='+';
 			kontoveraenderung=produktivZeit.sub(Config.minProduktivForPlus);
 		}
-			
+		
+		if(startZeit.add(Config.minGesamtZeitForPlus).nach(uhr)) { 
+			restZeit = startZeit.add(Config.minGesamtZeitForPlus).sub(uhr);
+		} else {
+			restZeit = new Zeit(0);
+		}
 	}
 }
