@@ -118,9 +118,8 @@ public class ZeitRechner extends JPanel implements ZeitListener
 			kontoVeraenderungPrefix='+';
 			kontoveraenderung=produktivZeit.sub(Config.minProduktivForPlus);
 		}
-		
-		if(startZeit.add(Config.minGesamtZeitForPlus).nach(uhr)) { 
-			restZeit = startZeit.add(Config.minGesamtZeitForPlus).sub(uhr);
+		if(gesamtZeit.compareTo(Config.minGesamtZeitForPlus) > 0) { //TODO: Fehler in CompareTo! 
+			restZeit = Config.minGesamtZeitForPlus.sub(gesamtZeit);
 		} else {
 			restZeit = new Zeit(0);
 		}
