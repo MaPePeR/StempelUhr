@@ -59,7 +59,7 @@ public abstract class AZeit implements Comparable<AZeit>
 	@Override
 	public int compareTo(AZeit o)
 	{
-		return o.getMinutes()-this.getMinutes();
+		return this.getMinutes()-o.getMinutes();
 	}
 	
 	public String toBase100() {

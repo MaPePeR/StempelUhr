@@ -85,7 +85,7 @@ public class ZeitRechner extends JPanel implements ZeitListener
 		for(int i=0;i<a.length;i++)
 		{
 			abschnittEnde=abschnittStart.add(a[i].dauer);
-			if(gesamtZeit.compareTo(abschnittEnde)<=0)
+			if(gesamtZeit.compareTo(abschnittEnde)>0)
 			{
 				//Der aktuelle Abschnitt ist bereits vollendet
 				if(a[i].arbeit)
@@ -107,8 +107,7 @@ public class ZeitRechner extends JPanel implements ZeitListener
 			abschnittStart=abschnittEnde;
 		}
 		
-		//Unlogisch aber funktioniert...
-		if(produktivZeit.compareTo(Config.minProduktivForPlus)>0)
+		if(produktivZeit.compareTo(Config.minProduktivForPlus)<=0)
 		{
 			kontoVeraenderungPrefix='-';
 			kontoveraenderung=Config.minProduktivForPlus.sub(produktivZeit);
@@ -118,7 +117,7 @@ public class ZeitRechner extends JPanel implements ZeitListener
 			kontoVeraenderungPrefix='+';
 			kontoveraenderung=produktivZeit.sub(Config.minProduktivForPlus);
 		}
-		if(gesamtZeit.compareTo(Config.minGesamtZeitForPlus) > 0) { //TODO: Fehler in CompareTo! 
+		if(gesamtZeit.compareTo(Config.minGesamtZeitForPlus) <= 0) { 
 			restZeit = Config.minGesamtZeitForPlus.sub(gesamtZeit);
 		} else {
 			restZeit = new Zeit(0);
