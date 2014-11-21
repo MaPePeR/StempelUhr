@@ -20,9 +20,15 @@ public abstract class AZeit implements Comparable<AZeit>
 	{
 		return new Zeit(this.getMinutes()-t.getMinutes());
 	}
+	public boolean kuerzer(AZeit t) {
+		return this.vor(t);
+	}
 	public boolean vor(AZeit t)
 	{
 		return this.getMinutes()<t.getMinutes();
+	}
+	public boolean laenger(AZeit t) {
+		return this.nach(t);
 	}
 	public boolean nach(AZeit t)
 	{

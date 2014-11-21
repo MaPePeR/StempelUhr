@@ -17,9 +17,9 @@ public class ClockWorkProgress extends AWorkProgress
 	private static final long serialVersionUID = 2476962221094781453L;
 	private double durchmesser;
 	private double radius;
-	public ClockWorkProgress(AZeit startZeit, AZeit uhr)
+	public ClockWorkProgress(AZeit startZeit, AZeit uhr, AZeit hoverZeit)
 	{
-		super(startZeit, uhr);
+		super(startZeit, uhr, hoverZeit);
 		this.setPreferredSize(new Dimension(200,200));
 	}
 

@@ -1,85 +1,114 @@
 package gui;
-import java.awt.GridLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 
-import data.Config;
-import data.ZeitListener;
-
-
 import zeitgeber.AZeit;
 import zeitgeber.Zeit;
+import data.Config;
+import data.ZeitListener;
 
 
 public class ZeitRechner extends JPanel implements ZeitListener
 {
 	private static final long serialVersionUID = -4921294151324453428L;
-	AZeit uhr;
+	AZeit hoverZeit;
 	AZeit startZeit;
+	AZeit uhr;
+	AZeit abwesenheitZeit;
+	private class ZeitPunktResult implements ZeitListener {
+		public ZeitPunktResult(AZeit zeit) {
+			this.zeit=zeit;
+			this.zeit.addZeitListener(this);
+		}
+		AZeit zeit;
+		JLabel jUhrzeit = new JLabel();
+		JLabel jGesamtZeit = new JLabel();
+		JLabel jProduktivZeit = new JLabel();
+		JLabel jPausenZeit = new JLabel();
+		JLabel jKontoVeraenderung = new JLabel();
+		JLabel jRestZeit = new JLabel();
+		@Override
+		public void timeHasChanged() {
+			recalculate(zeit, this);
+		}
+	}
 	
-	JLabel jUhrzeit = new JLabel();
-	JLabel jGesamtZeit = new JLabel();
-	JLabel jProduktivZeit = new JLabel();
-	JLabel jPausenZeit = new JLabel();
-	JLabel jKontoVeraenderung = new JLabel();
-	JLabel jRestZeit = new JLabel();
+	ZeitPunktResult hoverOrUhrResult;
+	ZeitPunktResult markerResult;
 	
-	AZeit gesamtZeit;
-	AZeit produktivZeit;
-	char kontoVeraenderungPrefix;
-	AZeit kontoveraenderung;
-	AZeit pausenZeit;
-	AZeit restZeit; 
-	
-	public ZeitRechner(AZeit startZeit,AZeit uhr)
+	public ZeitRechner(AZeit startZeit,AZeit hoverZeit, AZeit uhr, AZeit abwesenheitZeit)
 	{
-		this.uhr = uhr;
-		this.uhr.addZeitListener(this);
+		this.hoverZeit = hoverZeit;
+		this.hoverZeit.addZeitListener(this);
 		this.startZeit = startZeit;
 		this.startZeit.addZeitListener(this);
-		this.setLayout(new GridLayout(0,2));
+		this.uhr = uhr;
+		this.uhr.addZeitListener(this);
+		this.abwesenheitZeit = abwesenheitZeit;
+		this.abwesenheitZeit.addZeitListener(this);
+		Config.minGesamtZeitForPlus.addZeitListener(this);
+		Config.minProduktivForPlus.addZeitListener(this);
+		this.setLayout(new GridBagLayout());
 		
-		this.add(new JLabel("von - bis"));
-		this.add(jUhrzeit);
+		this.hoverOrUhrResult = new ZeitPunktResult(hoverZeit);
 		
-		this.add(new JLabel("Gesamtzeit:"));
-		this.add(jGesamtZeit);
-		
-		this.add(new JLabel("Produktivzeit:"));
-		this.add(jProduktivZeit);
-		
-		this.add(new JLabel("Pausenzeit:"));
-		this.add(jPausenZeit);
-		
-		this.add(new JLabel("Konto Veraenderung:"));
-		this.add(jKontoVeraenderung);
-		
-		this.add(new JLabel("Zeit bis Plus:"));
-		this.add(jRestZeit);
+		GridBagConstraints gbc = new GridBagConstraints();
+		gbc.anchor=GridBagConstraints.LINE_START;
+		gbc.ipadx = 10;
+		gbc.fill=GridBagConstraints.HORIZONTAL;
+		gbc.gridx=0;
+		gbc.gridy=GridBagConstraints.RELATIVE;
+		this.add(new JLabel("von - bis"),gbc);
+		this.add(new JLabel("Gesamtzeit:"),gbc);
+		this.add(new JLabel("Produktivzeit:"),gbc);
+		this.add(new JLabel("Pausenzeit:"),gbc);
+		this.add(new JLabel("Differenz:"),gbc);
+		this.add(new JLabel("Restzeit bis Ziel:"),gbc);
+		addResult(hoverOrUhrResult,1);
+	}
+	private void addResult(ZeitPunktResult r, int gridx) {
+		GridBagConstraints gbc = new GridBagConstraints();
+		gbc.anchor=GridBagConstraints.LINE_START;
+		gbc.ipadx = 10;
+		gbc.fill=GridBagConstraints.HORIZONTAL;
+		gbc.gridy=GridBagConstraints.RELATIVE;
+		gbc.gridx=gridx;
+		gbc.weightx=1;
+		this.add(r.jUhrzeit,gbc);
+		this.add(r.jGesamtZeit,gbc);
+		this.add(r.jProduktivZeit,gbc);
+		this.add(r.jPausenZeit,gbc);
+		this.add(r.jKontoVeraenderung,gbc);
+		this.add(r.jRestZeit,gbc);
 	}
 	@Override
 	public void timeHasChanged()
 	{
-		this.recalculate(uhr.getZeit());
-		this.display();
+		this.recalculate(hoverZeit.getZeit(),hoverOrUhrResult);
+		if (markerResult != null) {
+			this.recalculate(markerResult.zeit, markerResult);
+		}
 		
 	}
-	private void display()
-	{
-		jUhrzeit.setText(startZeit.toString()+" - "+uhr.toString());
-		jGesamtZeit.setText(gesamtZeit.getNormalAnd100());
-		jProduktivZeit.setText(produktivZeit.getNormalAnd100());
-		jPausenZeit.setText(pausenZeit.getNormalAnd100());
-		jKontoVeraenderung.setText(kontoveraenderung.getNormalAnd100(""+kontoVeraenderungPrefix));
-		jRestZeit.setText(restZeit.getNormalAnd100());
+	private String diffString(AZeit von, AZeit nach) {
+		if (von.vor(nach)) {
+			return "in " + nach.sub(von).toString();
+		} else {
+			return "vor " + von.sub(nach).toString();
+		}
 	}
-	private void recalculate(Zeit zeit)
+	private void recalculate(AZeit zeit, ZeitPunktResult r)
 	{
+		AZeit gesamtZeit=startZeit.vonNach(zeit);;
+		char kontoVeraenderungPrefix;
+		AZeit kontoveraenderung;
+		AZeit restZeit; 
 		Config.ZeitAbschnitt[] a = Config.getAbschnitte();
-		gesamtZeit=startZeit.vonNach(zeit);
-		produktivZeit=new Zeit(0);
-		pausenZeit=new Zeit(0);
+		AZeit produktivZeit=new Zeit(0);
+		AZeit pausenZeit=new Zeit(0);
 		Zeit abschnittEnde=new Zeit(0);
 		Zeit abschnittStart=new Zeit(0);
 		for(int i=0;i<a.length;i++)
@@ -107,6 +136,15 @@ public class ZeitRechner extends JPanel implements ZeitListener
 			abschnittStart=abschnittEnde;
 		}
 		
+		if (abwesenheitZeit.laenger(pausenZeit)) {
+			AZeit abwesenheitAbzug = abwesenheitZeit.sub(pausenZeit);
+			if (produktivZeit.laenger(abwesenheitAbzug)) {
+				produktivZeit = produktivZeit.sub(abwesenheitAbzug);
+			} else {
+				produktivZeit = new Zeit(0,0);
+			}
+		}
+		
 		if(produktivZeit.compareTo(Config.minProduktivForPlus)<=0)
 		{
 			kontoVeraenderungPrefix='-';
@@ -122,5 +160,13 @@ public class ZeitRechner extends JPanel implements ZeitListener
 		} else {
 			restZeit = new Zeit(0);
 		}
+		
+		r.jUhrzeit.setText(startZeit.toString()+" - "+hoverZeit.toString() + 
+				((hoverZeit.compareTo(this.uhr) == 0) ? "" : " (" + diffString(uhr, hoverZeit) + ")"));
+		r.jGesamtZeit.setText(gesamtZeit.getNormalAnd100());
+		r.jProduktivZeit.setText(produktivZeit.getNormalAnd100());
+		r.jPausenZeit.setText(pausenZeit.getNormalAnd100());
+		r.jKontoVeraenderung.setText(kontoveraenderung.getNormalAnd100(""+kontoVeraenderungPrefix));
+		r.jRestZeit.setText(restZeit.getNormalAnd100());
 	}
 }

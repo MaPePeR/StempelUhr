@@ -12,9 +12,9 @@ public class MinimalWorkProgress extends AWorkProgress
 {
 	private static final long serialVersionUID = -5531251461326590719L;
 
-	public MinimalWorkProgress(AZeit startZeit, AZeit uhr)
+	public MinimalWorkProgress(AZeit startZeit, AZeit uhr, AZeit hoverZeit)
 	{
-		super(startZeit, uhr);
+		super(startZeit, uhr, hoverZeit);
 		this.setPreferredSize(new Dimension(12*60/2,200));
 	}
 

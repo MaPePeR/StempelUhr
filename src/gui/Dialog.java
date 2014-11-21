@@ -15,6 +15,7 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerModel;
+import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.UIManager;
@@ -23,6 +24,7 @@ import javax.swing.plaf.FontUIResource;
 import zeitgeber.HoverZeit;
 import zeitgeber.SpinnerZeit;
 import zeitgeber.Uhrzeit;
+import data.Config;
 
 
 public class Dialog extends JFrame implements ItemListener,ActionListener, MouseWheelListener
@@ -46,17 +48,26 @@ public class Dialog extends JFrame implements ItemListener,ActionListener, Mouse
 	/*Liefert die markierte Stunde auf der Anzeige oder die aktuelle Uhrzeit*/
 	HoverZeit hoverZeit = new HoverZeit(uhr);
 
-	AWorkProgress progress = new ClockWorkProgress(spinnerZeit,hoverZeit);
+//	AWorkProgress progress = new ClockWorkProgress(spinnerZeit,uhr,hoverZeit);
+	AWorkProgress progress2 = new MinimalWorkProgress(spinnerZeit, uhr, hoverZeit);
 
-	/*Checkbox aktiviert Timer, Timer oder Button startet Aktualisierung von Rechnung.*/
-	JButton aktualisiere = new JButton("Aktualisieren");
-	JCheckBox auto = new JCheckBox("auto",false);
-	Timer timer = new Timer(60*1000,this);
-	ZeitRechner rechner = new ZeitRechner(spinnerZeit,hoverZeit);
 	
+	/*Checkbox aktiviert Timer, Timer oder Button startet Aktualisierung von Rechnung.*/
+	JButton aktualisiere = new JButton("\u21bb");
+	JCheckBox auto = new JCheckBox("auto",true);
+	Timer timer = new Timer(60*1000,this);
+	
+	
+	SpinnerNumberModel ziel_zeit_model = new SpinnerNumberModel(Config.minProduktivForPlus.getMinutes()/60.0,0,12,0.05);
+	JSpinner ziel_zeit = new JSpinner(ziel_zeit_model);
+	
+	SpinnerNumberModel abwesenheit_zeit_model = new SpinnerNumberModel(Config.abwesenheitZeit.getMinutes()/60.0,0,12,5.0/60);
+	JSpinner abwesenheit_zeit_spinner = new JSpinner(abwesenheit_zeit_model);
 	
 	JPanel spinContainer = new JPanel();
 	JPanel controlContainer = new JPanel();
+	
+	ZeitRechner rechner = new ZeitRechner(spinnerZeit,hoverZeit,uhr, Config.abwesenheitZeit);
 	
 	public Dialog()
 	{
@@ -73,16 +84,27 @@ public class Dialog extends JFrame implements ItemListener,ActionListener, Mouse
 		this.setDefaultCloseOperation(EXIT_ON_CLOSE);
 		this.setLayout(new BorderLayout());
 		
+		aktualisiere.setToolTipText("Aktualisiere Zeit");
+		auto.setToolTipText("Aktualisiere Zeit automatisch");
+		hour_spin.setToolTipText("Stempelzeit setzen (Stunde)");
+		min_spin.setToolTipText("Stempelzeit setzen (Minute)");
+		ziel_zeit.setToolTipText("Angestrebte Produktivzeit");
+		abwesenheit_zeit_spinner.setToolTipText("Abwesenheitszeit");
 		
-
 		controlContainer.setLayout(new BorderLayout());
 		
 		spinContainer.add(hour_spin);
 		spinContainer.add(min_spin);
 		spinContainer.add(aktualisiere);
 		spinContainer.add(auto);
+		spinContainer.add(ziel_zeit);
+		spinContainer.add(abwesenheit_zeit_spinner);
 //		
-		AWorkProgress progress2 = new MinimalWorkProgress(spinnerZeit, hoverZeit);
+		
+//		this.add(progress,BorderLayout.CENTER);
+//		progress.addMouseListener(hoverZeit);
+//		progress.addMouseMotionListener(hoverZeit);
+		
 		this.add(progress2,BorderLayout.SOUTH);
 		progress2.addMouseListener(hoverZeit);
 		progress2.addMouseMotionListener(hoverZeit);
@@ -90,19 +112,26 @@ public class Dialog extends JFrame implements ItemListener,ActionListener, Mouse
 		controlContainer.add(spinContainer,BorderLayout.NORTH);
 		controlContainer.add(rechner,BorderLayout.CENTER);
 		
-		this.add(progress,BorderLayout.CENTER);
-		this.add(controlContainer,BorderLayout.EAST);
+	
+		//this.add(controlContainer,BorderLayout.EAST);
+		this.add(controlContainer,BorderLayout.CENTER);
 		//((DefaultEditor) hour_spin.getEditor()).getTextField().setEditable(true);
 		//((DefaultEditor) min_spin.getEditor()).getTextField().setEditable(true);
 		
         hour_spin.setEditor(new JSpinner.NumberEditor(hour_spin, "00"));
         min_spin.setEditor(new JSpinner.NumberEditor(min_spin, "00"));
+        ziel_zeit.setEditor(new JSpinner.NumberEditor(ziel_zeit, "0.00"));
+        abwesenheit_zeit_spinner.setEditor(new JSpinner.NumberEditor(abwesenheit_zeit_spinner, "0.00"));
         hour_spin.addMouseWheelListener(this);
         min_spin.addMouseWheelListener(this);
-		progress.addMouseListener(hoverZeit);
-		progress.addMouseMotionListener(hoverZeit);
+        ziel_zeit.addMouseWheelListener(this);
+        abwesenheit_zeit_spinner.addMouseWheelListener(this);
+
+		ziel_zeit.addChangeListener(Config.minProduktivForPlus);
+		abwesenheit_zeit_spinner.addChangeListener(Config.abwesenheitZeit);
 		
 		auto.addItemListener(this);
+		this.itemStateChanged(null);
 	
         final Font fnt = new Font("Arial", Font.PLAIN, 12);
         final FontUIResource res = new FontUIResource(fnt);
@@ -111,8 +140,7 @@ public class Dialog extends JFrame implements ItemListener,ActionListener, Mouse
         UIManager.getLookAndFeelDefaults().put("Label.font", res);
         UIManager.getLookAndFeelDefaults().put("CheckBox.font", res);
         SwingUtilities.updateComponentTreeUI(this);
-		
-		
+        
 		this.setLocation(200, 200);
 		this.pack();
 		this.setVisible(true);
@@ -162,14 +190,27 @@ public class Dialog extends JFrame implements ItemListener,ActionListener, Mouse
 		if(e.getSource() instanceof JSpinner)
 		{
 			SpinnerModel mod=((JSpinner)e.getSource()).getModel();
+			Object val;
 			if(e.getWheelRotation()>0)
 			{
-				mod.setValue(mod.getPreviousValue());
+				val = mod.getPreviousValue();
 			}
 			else
 			{
-				mod.setValue(mod.getNextValue());
+				val = mod.getNextValue();
 			}
+			if (mod instanceof SpinnerNumberModel) {
+				SpinnerNumberModel numberMod = (SpinnerNumberModel)mod;
+				Comparable max = numberMod.getMaximum();
+				Comparable min = numberMod.getMinimum();
+				if ((val == null && e.getWheelRotation()<0)||(val != null && max != null && max.compareTo(val) < 0)) {
+					val = max;
+				}
+				if ((val == null && e.getWheelRotation()>0)||(val != null && min != null && min.compareTo(val) > 0)) {
+					val = min;
+				}
+			}
+			mod.setValue(val);
 		}
 	}
 	

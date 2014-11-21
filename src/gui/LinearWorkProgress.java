@@ -10,9 +10,9 @@ import zeitgeber.Zeit;
 public class LinearWorkProgress extends AWorkProgress
 {
 	private static final long serialVersionUID = 4649807201579673414L;
-	public LinearWorkProgress(AZeit startZeit, AZeit uhr)
+	public LinearWorkProgress(AZeit startZeit, AZeit uhr, AZeit hoverZeit)
 	{
-		super(startZeit, uhr);
+		super(startZeit, uhr, hoverZeit);
 		this.setPreferredSize(new Dimension(24*60/2,140));
 
 	}
